@@ -1,0 +1,10 @@
+ID,Name,Duration,Predecessors,Start_Date,Finish_Date,Total_Slack,Resource_Names,PDEx_Criticality
+1,Start,0 days,,Mon 8/7/23,Mon 8/7/23,20 days,,-1
+2,Requirements,15 days,1,Mon 8/7/23,Fri 8/25/23,20 days,"ARC,UX",20
+3,Architecture / DD,30 days,2,Mon 8/28/23,Fri 10/6/23,20 days,"ARC,JRARC",20
+4,Project Planning,5 days,3,Mon 10/16/23,Fri 10/20/23,20 days,"ARC,PM",20
+5,SDP Review,5 days,4,Mon 10/23/23,Fri 10/27/23,20 days,"ARC,PM,JRARC",20
+6,UX Design,60 days,5,Mon 10/30/23,Wed 1/31/24,135 days,UX,135
+7,Database setup / migration,10 days,"5",Mon 12/11/23,Wed 1/3/24,30 days,DEV3,30
+8,Storage Complete,0 days,"42",Wed 4/10/24,Wed 4/10/24,95 days,,-1
+8,Release,0 days,"8",Wed 4/10/24,Wed 4/10/24,95 days,,-1

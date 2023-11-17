@@ -1,0 +1,92 @@
+{
+  "db_name": "SQLite",
+  "query": "\n    SELECT t.id           as id,\n       t.name             as name,\n       t.duration         as duration,\n       t.predecessors     as predecessors,\n       t.start_date       as start_date,\n       t.finish_date      as finish_date,\n       t.total_slack      as total_slack,\n       t.resource_names   as resource_names,\n       t.pdex_criticality as pdex_criticality,\n       td.id              as task_data_id,\n       td.assignee        as assignee,\n       td.finished_at     as finished_at,\n       CASE\n           WHEN td.finished_at IS NOT NULL THEN true\n           ELSE false\n       END as finished\n       FROM tasks t\n         LEFT OUTER JOIN task_data td\n                         ON t.id = td.task_id\n       WHERE duration > 0\n       ORDER BY start_date, total_slack DESC;\n    ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "duration",
+        "ordinal": 2,
+        "type_info": "Int64"
+      },
+      {
+        "name": "predecessors",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "start_date",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "finish_date",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "total_slack",
+        "ordinal": 6,
+        "type_info": "Int64"
+      },
+      {
+        "name": "resource_names",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "pdex_criticality",
+        "ordinal": 8,
+        "type_info": "Int64"
+      },
+      {
+        "name": "task_data_id",
+        "ordinal": 9,
+        "type_info": "Int64"
+      },
+      {
+        "name": "assignee",
+        "ordinal": 10,
+        "type_info": "Text"
+      },
+      {
+        "name": "finished_at",
+        "ordinal": 11,
+        "type_info": "Text"
+      },
+      {
+        "name": "finished",
+        "ordinal": 12,
+        "type_info": "Int"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "89231670c4a72465c203c7e3b6c6bf53d10fe52df18c89067ec6a9396fb8a194"
+}
