@@ -1,21 +1,21 @@
-
-use prettytable::{row, Table};
 use chrono::NaiveDate;
 use colored::Colorize;
 use csv::Reader;
+use prettytable::{row, Table};
 use serde::de::Error;
 use serde::Deserialize;
 use sqlx::SqlitePool;
 use titlecase::titlecase;
 
+pub(crate) mod earned_value;
 
-pub(crate) async fn list(pool: &SqlitePool, task_status: TaskStatus) -> anyhow::Result<()>{
+pub(crate) async fn list(pool: &SqlitePool, task_status: TaskStatus) -> anyhow::Result<()> {
     println!("list");
     let conn = pool.acquire().await?;
 
     // Insert the task, then obtain the ID of this row
     let tasks = sqlx::query!(
-    r#"
+        r#"
     SELECT t.id           as id,
        t.name             as name,
        t.duration         as duration,
@@ -38,18 +38,22 @@ pub(crate) async fn list(pool: &SqlitePool, task_status: TaskStatus) -> anyhow::
        WHERE duration > 0
        ORDER BY start_date, total_slack DESC;
     "#,
-
-)
-        .fetch_all(pool)
-        .await?;
+    )
+    .fetch_all(pool)
+    .await?;
 
     // Filter tasks based on status
     let tasks = match task_status {
         TaskStatus::All => tasks,
-        TaskStatus::Pending => tasks.into_iter().filter(|task| task.finished == 0).collect(),
-        TaskStatus::Completed => tasks.into_iter().filter(|task| task.finished == 1).collect(),
+        TaskStatus::Pending => tasks
+            .into_iter()
+            .filter(|task| task.finished == 0)
+            .collect(),
+        TaskStatus::Completed => tasks
+            .into_iter()
+            .filter(|task| task.finished == 1)
+            .collect(),
     };
-
 
     // Create the table
     let mut table = Table::new();
@@ -57,34 +61,45 @@ pub(crate) async fn list(pool: &SqlitePool, task_status: TaskStatus) -> anyhow::
     for task in tasks {
         let assignee = titlecase(&*task.assignee.unwrap_or("".to_string()));
         if task.finished == 1 {
-            table.add_row(row![task.id.to_string().bold(), assignee, task.name.green().dimmed()]);
+            table.add_row(row![
+                task.id.to_string().bold(),
+                assignee,
+                task.name.green().dimmed()
+            ]);
         } else if assignee != "" {
-            table.add_row(row![task.id.to_string().bold(), assignee, task.name.blue().bold()]);
-        }
-        else {
-            table.add_row(row![task.id.to_string().bold(), assignee, task.name.white().dimmed()]);
+            table.add_row(row![
+                task.id.to_string().bold(),
+                assignee,
+                task.name.blue().bold()
+            ]);
+        } else {
+            table.add_row(row![
+                task.id.to_string().bold(),
+                assignee,
+                task.name.white().dimmed()
+            ]);
         };
-
     }
     table.printstd();
     Ok(())
 }
 
-
 pub fn log(pool: &SqlitePool) {
     println!("Log")
 }
 
-pub fn track(pool: &SqlitePool) {
-    println!("Track")
-}
-
+pub fn track(pool: &SqlitePool) {}
 pub async fn init(pool: &SqlitePool, ms_project_file: String, database_file: String) {
     println!("Init {} {}", ms_project_file, database_file);
-    let tasks = load_from_csv(&ms_project_file).expect(&*format!("Failed to load tasks from CSV file {}", ms_project_file));
+    let tasks = load_from_csv(&ms_project_file).expect(&*format!(
+        "Failed to load tasks from CSV file {}",
+        ms_project_file
+    ));
     for task in tasks {
         println!("Task: {:?}", task);
-        let inserted_id = insert_task(&pool, &task).await.expect("Failed to insert task");
+        let inserted_id = insert_task(&pool, &task)
+            .await
+            .expect("Failed to insert task");
         println!("Task inserted: {:?} with db-id: {}", task, inserted_id);
     }
 }
@@ -113,8 +128,8 @@ struct Task {
 
 //Parsing the total_slack field from a string like "30 days" into an integer.
 fn parse_days<'de, D>(deserializer: D) -> Result<i32, D::Error>
-    where
-        D: serde::Deserializer<'de>,
+where
+    D: serde::Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     s.split_whitespace()
@@ -125,8 +140,8 @@ fn parse_days<'de, D>(deserializer: D) -> Result<i32, D::Error>
 }
 
 fn parse_date<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
-    where
-        D: serde::Deserializer<'de>,
+where
+    D: serde::Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     NaiveDate::parse_from_str(&s, "%a %m/%d/%y").map_err(D::Error::custom)

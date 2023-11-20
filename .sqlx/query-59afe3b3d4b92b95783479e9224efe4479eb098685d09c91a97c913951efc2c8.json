@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT duration,\n           CAST(CASE\n               WHEN strftime('%Y%W', finish_date) < 10 THEN '0' || strftime('%W', finish_date)\n               ELSE strftime('%Y%W', finish_date)\n               END AS INTEGER) AS should_finish,\n           CAST(CASE\n               WHEN strftime('%Y%W', finished_at) < 10 THEN '0' || strftime('%W', finished_at)\n               ELSE strftime('%Y%W', finished_at)\n               END AS INTEGER) AS actual_finish\n           FROM tasks\n             LEFT JOIN task_data td on tasks.id = td.task_id\n           WHERE duration > 0\n           ORDER BY start_date, total_slack DESC;\n    ",
+  "describe": {
+    "columns": [
+      {
+        "name": "duration",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "should_finish",
+        "ordinal": 1,
+        "type_info": "Int"
+      },
+      {
+        "name": "actual_finish",
+        "ordinal": 2,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "59afe3b3d4b92b95783479e9224efe4479eb098685d09c91a97c913951efc2c8"
+}

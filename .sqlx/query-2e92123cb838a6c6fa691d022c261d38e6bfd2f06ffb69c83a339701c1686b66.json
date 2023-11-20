@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT sum(duration) as total_effort FROM tasks\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "total_effort",
+        "ordinal": 0,
+        "type_info": "Int"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "2e92123cb838a6c6fa691d022c261d38e6bfd2f06ffb69c83a339701c1686b66"
+}

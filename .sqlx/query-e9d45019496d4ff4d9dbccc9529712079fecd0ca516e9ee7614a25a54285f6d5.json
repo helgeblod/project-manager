@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT min(start_date) as start_date, max(finish_date) as end_date FROM tasks\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "start_date",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "end_date",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "e9d45019496d4ff4d9dbccc9529712079fecd0ca516e9ee7614a25a54285f6d5"
+}
