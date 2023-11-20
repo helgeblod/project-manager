@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            INSERT INTO timesheet (task_id, date, duration) VALUES (?1, ?2, ?3)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "6811dd8e8ef212b3cd3c8bf2bd9fe79f8614c6affd9deae6756322dbbf7c3532"
+}

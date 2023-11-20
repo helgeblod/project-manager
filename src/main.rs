@@ -1,14 +1,12 @@
 extern crate clap;
 extern crate prettytable;
 
-use chrono::format::Numeric::IsoWeek;
-use chrono::{Datelike, Local};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
+use chrono::Datelike;
 use clap::{Parser, Subcommand};
-use colored::Colorize;
 use inquire::{InquireError, Select};
 use promptly::prompt_default;
 use sqlx::migrate::MigrateDatabase;
@@ -23,7 +21,7 @@ mod project;
 #[command(
     author,
     version,
-    about = "Project management done right in the terminal 👔 \n Database file is read from the ENV-variable TASKS_DB_FILE or defaults to tasks.db",
+    about = "Project management done right in the terminal 👔 \n Database file is read from the ENV-variable PROJECT_MANAGER_DB_FILE or defaults to ./db/tasks.db",
     long_about = "Project management tool to support The Method from IDesign"
 )]
 #[command(propagate_version = true)]
@@ -34,20 +32,29 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Initialize the database from from MS Project
-    Init {},
+    /// Complete a task
+    Complete {},
+
+    /// Import project from MS Project
+    Import {},
 
     /// List tasks ✅
-    List {},
+    List {
+        /// Filter tasks
+        #[clap(short, long)]
+        number_of_tasks: Option<usize>,
+    },
 
-    /// Log work 📝
-    Log {},
+    /// Log work
+    log {},
 
-    /// Generate earned value chart 📈
-    EarnedValue {
-        /// The path to the generated chart
-        #[arg(short, long, default_value = "earned_value.png")]
-        outfile: String,
+    /// Assign task
+    Assign {},
+
+    /// Generate earned value chart
+    EV {
+        #[clap(short, long)]
+        chart_title: Option<String>,
     },
 }
 
@@ -59,7 +66,7 @@ async fn main() -> anyhow::Result<()> {
         std::env::var("PROJECT_MANAGER_DB_FILE").unwrap_or("./db/tasks.db".to_string());
 
     match &cli.command {
-        Commands::Init {} => {
+        Commands::Import {} => {
             // Migrate database
             create_database_check(&database_file).await?;
             let pool = connect_to_db_pool(&database_file).await;
@@ -75,7 +82,7 @@ async fn main() -> anyhow::Result<()> {
                 prompt_default("Enter path to MS Project file", PathBuf::from("tasks.csv"))?;
 
             // get command
-            project::init(
+            project::import(
                 &pool,
                 project_file.to_string_lossy().into_owned(),
                 database_file,
@@ -83,47 +90,51 @@ async fn main() -> anyhow::Result<()> {
             .await;
         }
 
-        Commands::List { .. } => {
+        Commands::List { number_of_tasks } => {
             let pool = connect_to_db_pool(&database_file).await;
 
-            let options: Vec<&str> = vec!["Doing/Pending", "All", "Completed"];
+            let options: Vec<&str> = vec!["Assigned", "Unassigned", "All", "Completed"];
             let ans: Result<&str, InquireError> = Select::new("What tasks?", options).prompt();
 
             let choice = match ans {
                 Ok(choice) => match choice {
-                    "Doing/Pending" => TaskStatus::Pending,
+                    "Assigned" => TaskStatus::Assigned,
+                    "Unassigned" => TaskStatus::Unassigned,
                     "All" => TaskStatus::All,
                     "Completed" => TaskStatus::Completed,
                     _ => TaskStatus::All,
                 },
                 Err(_) => TaskStatus::All,
             };
-            project::list(&pool, choice)
+            project::list(&pool, choice, number_of_tasks)
                 .await
                 .expect("Could not list tasks");
         }
 
-        Commands::Log { .. } => {
+        Commands::log { .. } => {
             let pool = connect_to_db_pool(&database_file).await;
-            project::log(&pool);
+            project::log_work(&pool).await.expect("Could not log work");
         }
 
-        Commands::EarnedValue { .. } => {
+        Commands::EV { chart_title } => {
             let pool = connect_to_db_pool(&database_file).await;
-            let today = Local::now();
-            let prefixed_file_name = format!(
-                "charts/ev_chart-week-{}-({}).png",
-                today.iso_week().week(),
-                today.format("%s").to_string()
-            );
-            let path = PathBuf::from(prefixed_file_name);
-            let earned_value_file: PathBuf =
-                prompt_default("Enter path to generated chart:", path)?;
 
-            fs::create_dir_all(&earned_value_file.parent().unwrap().to_path_buf())?;
-            earned_value::generate_chart(&pool, earned_value_file)
+            let title = chart_title
+                .clone()
+                .unwrap_or("Earned value chart ✨".to_string());
+
+            earned_value::generate_chart(&pool, title.as_str())
                 .await
                 .expect("Could not generate chart 💥");
+        }
+
+        Commands::Complete {} => {
+            let pool = connect_to_db_pool(&database_file).await;
+            project::complete_tasks(&pool).await?;
+        }
+        Commands::Assign { .. } => {
+            let pool = connect_to_db_pool(&database_file).await;
+            project::assign_tasks(pool).await?;
         }
     }
     Ok(())
