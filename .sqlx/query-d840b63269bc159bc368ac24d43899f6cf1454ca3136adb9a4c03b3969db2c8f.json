@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                    UPDATE task_data SET finished_at = CURRENT_TIMESTAMP WHERE task_id = ?1\n                    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "d840b63269bc159bc368ac24d43899f6cf1454ca3136adb9a4c03b3969db2c8f"
+}

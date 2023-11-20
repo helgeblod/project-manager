@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO task_data (assignee, task_id) VALUES (LOWER(?1), ?2)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "716a594171d9acbc195273d58460ab8ac5ffd11b4e76292bfd2678bd6867d968"
+}
