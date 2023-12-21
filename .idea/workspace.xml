@@ -7,7 +7,11 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f6caacd9-0696-431a-8be7-352bd063cb9c" name="Changes" comment="WIP" />
+    <list default="true" id="f6caacd9-0696-431a-8be7-352bd063cb9c" name="Changes" comment="WIP">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/9dd2a367-cac0-4d10-8d99-7bfd6c7c2bfe.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/9dd2a367-cac0-4d10-8d99-7bfd6c7c2bfe.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -24,24 +28,30 @@
     <option name="INCOMING_CHECK_STRATEGY" value="Never" />
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="KubernetesApiProvider"><![CDATA[{
-  "contexts": [
+  <component name="GitToolBoxStore">
+    <option name="projectConfigVersion" value="5" />
+  </component>
+  <component name="KubernetesApiProvider">{
+  &quot;contexts&quot;: [
     {
-      "name": "minikube",
-      "originalNamespace": "default"
+      &quot;name&quot;: &quot;minikube&quot;,
+      &quot;originalNamespace&quot;: &quot;default&quot;
     }
   ],
-  "isMigrated": true
-}]]></component>
+  &quot;isMigrated&quot;: true
+}</component>
   <component name="KubernetesSettings">
     <option name="contextName" value="minikube" />
   </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="4fahex2o" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 4
-}]]></component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
   <component name="ProjectId" id="2YIRHXpvTygk1fobmp1UMQOlZqg" />
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="1" id="Add" />
@@ -59,11 +69,13 @@
     "V_FMT": "true",
     "WebServerToolWindowFactoryState": "false",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "/Users/jonashelgemo/src/personal/project-manager",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/Users/jonashelgemo/src/personal/project-manager/Cargo.toml",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
     "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
     "ruby.rails.projectView.checked": "true",
     "settings.editor.selected.configurable": "language.rust.rustfmt",

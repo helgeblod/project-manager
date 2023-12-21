@@ -38,7 +38,7 @@ enum Commands {
     Init {},
 
     /// List tasks ✅
-    Tasks {},
+    List {},
 
     /// Log work 📝
     Log {},
@@ -83,7 +83,7 @@ async fn main() -> anyhow::Result<()> {
             .await;
         }
 
-        Commands::Tasks { .. } => {
+        Commands::List { .. } => {
             let pool = connect_to_db_pool(&database_file).await;
 
             let options: Vec<&str> = vec!["Doing/Pending", "All", "Completed"];
