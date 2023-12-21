@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT sum(duration) as effort,\n        CAST(CASE\n                WHEN strftime('%Y%W', date) < 10 THEN '0' || strftime('%W', date)\n                ELSE strftime('%Y%W', date)\n           END AS INTEGER) AS week\n        FROM timesheet\n        GROUP BY week\n        ORDER BY week ASC;\n    ",
+  "describe": {
+    "columns": [
+      {
+        "name": "effort",
+        "ordinal": 0,
+        "type_info": "Int"
+      },
+      {
+        "name": "week",
+        "ordinal": 1,
+        "type_info": "Int"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "66fd1fe79a581c2cd306842f2a784911e629500fc796ad7f5d428ec495ef93e0"
+}

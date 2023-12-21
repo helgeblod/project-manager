@@ -17,14 +17,17 @@ CREATE TABLE IF NOT EXISTS task_data
     task_id     INTEGER,
     assignee    TEXT,
     finished_at TEXT DEFAULT NULL,
+    UNIQUE (task_id),
     FOREIGN KEY (task_id) REFERENCES tasks (id)
 );
+
+CREATE UNIQUE INDEX idx_task_id ON task_data(task_id);
 
 CREATE TABLE IF NOT EXISTS timesheet
 (
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
     task_id INTEGER,
     date    TEXT,
-    hours   INTEGER,
+    duration   INTEGER,
     FOREIGN KEY (task_id) REFERENCES tasks (id)
 );

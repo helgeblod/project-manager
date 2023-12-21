@@ -1,12 +1,17 @@
+use std::fs;
+use std::path::PathBuf;
+
 use chrono::{Datelike, Duration, Local, NaiveDate};
-use plotly::color::NamedColor::Green;
+use inquire::error::InquireResult;
+use inquire::{Confirm, Select};
+use plotly::color::NamedColor::{Blue, Green, Orange, Red};
 use plotly::common::{Mode, Title};
 use plotly::layout::Axis;
 use plotly::{common, ImageFormat, Layout, Plot, Scatter};
+use promptly::prompt_default;
 use sqlx::{Pool, Sqlite};
-use std::path::PathBuf;
 
-pub(crate) async fn generate_chart(pool: &Pool<Sqlite>, out_file: PathBuf) -> anyhow::Result<()> {
+pub(crate) async fn generate_chart(pool: &Pool<Sqlite>, chart_title: &str) -> anyhow::Result<()> {
     // Insert the task, then obtain the ID of this row
     let dates = sqlx::query!(
         r#"
@@ -24,7 +29,6 @@ pub(crate) async fn generate_chart(pool: &Pool<Sqlite>, out_file: PathBuf) -> an
         NaiveDate::parse_from_str(&start_date, "%Y-%m-%d").expect("Error parsing start date"),
         NaiveDate::parse_from_str(&end_date, "%Y-%m-%d").expect("Error parsing end date"),
     );
-    println!("Week numbers: {:?}", week_numbers);
 
     let total_effort_result = sqlx::query!(
         r#"
@@ -35,7 +39,6 @@ pub(crate) async fn generate_chart(pool: &Pool<Sqlite>, out_file: PathBuf) -> an
     .await?;
 
     let total_effort = total_effort_result.total_effort.expect("No total effort");
-    println!("Total effort: {}", total_effort);
 
     let tasks = sqlx::query!(
         r#"SELECT duration,
@@ -56,10 +59,24 @@ pub(crate) async fn generate_chart(pool: &Pool<Sqlite>, out_file: PathBuf) -> an
     .fetch_all(pool)
     .await?;
 
-    println!("Tasks: {:?}", tasks);
+    let work_effort = sqlx::query!(
+        r#"SELECT sum(duration) as effort,
+        CAST(CASE
+                WHEN strftime('%Y%W', date) < 10 THEN '0' || strftime('%W', date)
+                ELSE strftime('%Y%W', date)
+           END AS INTEGER) AS week
+        FROM timesheet
+        GROUP BY week
+        ORDER BY week ASC;
+    "#,
+    )
+    .fetch_all(pool)
+    .await?;
 
     let mut planned_value = vec![0.0f32; week_numbers.len()];
     let mut earned_value = vec![0.0f32; week_numbers.len()];
+    let mut effort = vec![0.0f32; week_numbers.len()];
+
     for task in tasks {
         let task_value = (task.duration as f32 / total_effort as f32) * 100f32;
 
@@ -70,20 +87,12 @@ pub(crate) async fn generate_chart(pool: &Pool<Sqlite>, out_file: PathBuf) -> an
             Some(_) => task_value,
         };
 
-        println!(
-            "#{} Planned value: {}% actual_value: {}%",
-            task.duration, value_planned, value_actual
-        );
-
         // Planned value
         if let Some(index) = week_numbers
             .iter()
             .position(|&x| x == task.should_finish.unwrap())
         {
             planned_value[index] += value_planned;
-            println!("Element found at index {}", index);
-        } else {
-            println!("Element not found in vec");
         }
 
         // Earned value
@@ -108,6 +117,7 @@ pub(crate) async fn generate_chart(pool: &Pool<Sqlite>, out_file: PathBuf) -> an
     let current_week = (year.to_string() + format!("{:02}", week).as_str())
         .parse()
         .unwrap();
+
     for i in 1..earned_value.len() {
         if week_numbers[i] > current_week {
             earned_value[i] = 0.0;
@@ -124,8 +134,26 @@ pub(crate) async fn generate_chart(pool: &Pool<Sqlite>, out_file: PathBuf) -> an
         .collect();
     earned_value.reverse();
 
-    println!("Planned value: {:?}", planned_value);
-    println!("Earned value: {:?}", earned_value);
+    // Effort
+    for work_line in work_effort {
+        let week = work_line.week.unwrap() as i32;
+        let eff = work_line.effort.unwrap() as f32;
+        let index = week_numbers.iter().position(|&x| x == week).unwrap();
+        effort[index] += (eff / total_effort as f32) * 100.0;
+    }
+
+    // aggregate effort
+    for i in 1..effort.len() {
+        if week_numbers[i] > current_week {
+            effort[i] = 0.0;
+        } else {
+            effort[i] += effort[i - 1];
+        }
+    }
+
+    // Remove trailing zeroes
+    effort = effort.into_iter().rev().skip_while(|&x| x == 0.0).collect();
+    effort.reverse();
 
     let week_prefix = "W";
     let x_axis: Vec<String> = week_numbers
@@ -133,26 +161,85 @@ pub(crate) async fn generate_chart(pool: &Pool<Sqlite>, out_file: PathBuf) -> an
         .map(|&num| week_prefix.to_owned() + &num.to_string().get(2..).unwrap_or_default())
         .collect();
 
+    let trace1 = Scatter::new(x_axis.clone(), effort)
+        .mode(Mode::Lines)
+        .line(common::Line::new().color(Red))
+        .name("Effort 🧑‍💻");
+
     let trace2 = Scatter::new(x_axis.clone(), planned_value)
         .mode(Mode::Lines)
-        .name("Planned Progress");
+        .line(common::Line::new().color(Blue))
+        .name("Planned Progress 🏦");
     let trace3 = Scatter::new(x_axis.clone(), earned_value)
         .mode(Mode::Lines)
         .line(common::Line::new().color(Green))
-        .name("Earned value");
+        .name("Earned value 💶");
 
     let layout = Layout::new()
-        .title(Title::new("Earned Value Chart ✨"))
+        .title(Title::new(chart_title))
         .x_axis(Axis::new().title(Title::from("Week #")))
         .y_axis(Axis::new().title(Title::from("Done %")));
 
     let mut plot = Plot::new();
+    plot.add_trace(trace1);
     plot.add_trace(trace2);
     plot.add_trace(trace3);
     plot.set_layout(layout);
-    plot.write_image(out_file, ImageFormat::PNG, 1800, 1000, 1.0);
+
+    let options = vec![ImageFormat::PDF, ImageFormat::SVG, ImageFormat::PNG];
+    let ans = Select::new("Output file format?", options).prompt();
+
+    let image_format = if ans.is_err() {
+        println!("Could not get output file format, defaulting to PDF");
+        ImageFormat::PDF
+    } else {
+        match ans.unwrap() {
+            ImageFormat::PNG => ImageFormat::PNG,
+            ImageFormat::SVG => ImageFormat::SVG,
+            ImageFormat::PDF => ImageFormat::PDF,
+            _ => {
+                println!("Unsupported file format, defaulting to PDF");
+                ImageFormat::PDF
+            }
+        }
+    };
+
+    // Generate outfile
+    let today = Local::now();
+    let prefixed_file_name = format!(
+        "charts/ev_chart-week-{}-({}).{image_format}",
+        today.iso_week().week(),
+        today.format("%s").to_string()
+    );
+
+    let path = PathBuf::from(prefixed_file_name);
+    let out_file: PathBuf = prompt_default("Enter path to generated chart:", path)?;
+    fs::create_dir_all(&out_file.parent().unwrap().to_path_buf())?;
+
+    match image_format {
+        ImageFormat::PNG => plot.write_image(out_file.clone(), ImageFormat::PNG, 1800, 1000, 1.0),
+        ImageFormat::SVG => plot.write_image(out_file.clone(), ImageFormat::SVG, 1800, 1000, 1.0),
+        ImageFormat::PDF => plot.write_image(out_file.clone(), ImageFormat::PDF, 1800, 1000, 1.0),
+        _ => plot.write_image(out_file.clone(), ImageFormat::PDF, 1800, 1000, 1.0),
+    };
+
+    let ans = Confirm::new("Open the generated Earned Value Chart?")
+        .with_default(false)
+        .prompt();
+
+    let file = out_file.clone();
+
+    if ans.is_ok() && ans.unwrap() == true {
+        opener::open(file).expect("Could not open file");
+    } else {
+        println!(
+            "Ok, the chart is saved in the charts folder: {}",
+            file.to_str().unwrap()
+        );
+    }
+
     // To open in browser
-    // plot.show();
+    // plot.show()
     Ok(())
 }
 
@@ -170,11 +257,4 @@ fn generate_week_numbers(start_date: NaiveDate, finish_date: NaiveDate) -> Vec<i
         current_date += Duration::weeks(1);
     }
     week_numbers
-}
-
-#[derive(Debug)]
-struct Task {
-    duration: i32,
-    planned_finish: i32,
-    actual_finish: Option<i32>,
 }
