@@ -25,8 +25,11 @@ pub(crate) async fn generate_chart(pool: &Pool<Sqlite>, chart_title: &str) -> an
     let end_date = dates.end_date.expect("No end date");
 
     // Generate weeks between start and end date
+    let from_date = NaiveDate::parse_from_str(&start_date, "%Y-%m-%d")
+        .expect("Error parsing start date")
+        - Duration::weeks(1);
     let week_numbers = generate_week_numbers(
-        NaiveDate::parse_from_str(&start_date, "%Y-%m-%d").expect("Error parsing start date"),
+        from_date,
         NaiveDate::parse_from_str(&end_date, "%Y-%m-%d").expect("Error parsing end date"),
     );
 
